@@ -5,23 +5,11 @@ https://services2.arcgis.com/b5ADKIcWivL5vNaV/arcgis/rest/services/Public_Access
 
 import json
 import time
-import xml.etree.ElementTree as ET
 
 import requests
 
 from config import BASE_URL, GPX_FILE, LAYERS, OUTPUT_DIR, PAGE_SIZE, TABLES
-
-GPX_NS = "http://www.topografix.com/GPX/1/1"
-
-
-def gpx_bounding_box(gpx_path) -> tuple[float, float, float, float]:
-    tree = ET.parse(gpx_path)
-    root = tree.getroot()
-    lats = [float(pt.attrib["lat"]) for pt in root.iter(f"{{{GPX_NS}}}trkpt")]
-    lons = [float(pt.attrib["lon"]) for pt in root.iter(f"{{{GPX_NS}}}trkpt")]
-    if not lats:
-        raise ValueError(f"No track points found in {gpx_path}")
-    return min(lons), min(lats), max(lons), max(lats)
+from gpxutils import gpx_bounding_box
 
 
 def build_geometry_params(min_lon, min_lat, max_lon, max_lat) -> dict:
