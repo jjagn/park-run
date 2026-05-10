@@ -4,7 +4,7 @@ BASE_URL = "https://services2.arcgis.com/b5ADKIcWivL5vNaV/arcgis/rest/services/P
 PAGE_SIZE = 2000
 OUTPUT_DIR = Path("data")
 RESULTS_FILE = Path("results/analysis.json")
-GPX_FILE = Path("activity_22826615976.gpx")
+GPX_FILE = Path("data/park_run.gpx")
 GPX_BUFFER_METERS = 1
 
 # Layers to download (layer_id, output_name)

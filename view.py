@@ -2,18 +2,26 @@ import glob
 import json
 import math
 import os
-import random
 import re
 import webbrowser
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import folium
+import shapely.geometry as sg
+
+from config import GPX_BUFFER_METERS
+from gpxutils import buffer_track
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+RESULTS_FILE = os.path.join(os.path.dirname(__file__), "results", "analysis.json")
+TEMPLATE_FILE = os.path.join(os.path.dirname(__file__), "panel_template.html")
 
 STYLE_INTERSECTED = {
     "color": "#27ae60", "fillColor": "#2ecc71", "fillOpacity": 0.5, "weight": 2,
+}
+STYLE_BUFFER_ONLY = {
+    "color": "#d35400", "fillColor": "#e67e22", "fillOpacity": 0.4, "weight": 2,
 }
 STYLE_DEFAULT = {
     "color": "#7f8c8d", "fillColor": "#95a5a6", "fillOpacity": 0.2, "weight": 1,
@@ -127,34 +135,22 @@ def parcel_points(area_m2):
 
 # ── Intersection data ─────────────────────────────────────────────────────────
 
-def build_intersections(geojson_files):
-    intersections = {}
-    for path in geojson_files:
-        with open(path) as f:
-            data = json.load(f)
-        for feature in data.get("features", []):
-            fid = str(feature.get("id", ""))
-            if fid:
-                intersections[fid] = random.choice([True, False])
-
-    out = os.path.join(DATA_DIR, "intersections.json")
-    with open(out, "w") as f:
-        json.dump(intersections, f, indent=2)
-    return intersections
-
-
 def load_intersections():
-    path = os.path.join(DATA_DIR, "intersections.json")
-    if os.path.exists(path):
-        with open(path) as f:
-            return json.load(f)
-    return {}
+    if not os.path.exists(RESULTS_FILE):
+        raise FileNotFoundError(
+            f"{RESULTS_FILE} not found — run analyze_gpx.py first"
+        )
+    with open(RESULTS_FILE) as f:
+        data = json.load(f)
+    return {str(v["id"]): v["distance_through_m"] for v in data.get("visited", [])}
 
 
 def make_style_fn(intersections):
     def style_fn(feature):
         fid = str(feature.get("id", ""))
-        return STYLE_INTERSECTED if intersections.get(fid) else STYLE_DEFAULT
+        if fid not in intersections:
+            return STYLE_DEFAULT
+        return STYLE_INTERSECTED if intersections[fid] > 0 else STYLE_BUFFER_ONLY
     return style_fn
 
 
@@ -164,137 +160,24 @@ def inject_panel_and_legend(html_path, stats, total_score, intersected_count):
     with open(html_path) as f:
         html = f.read()
 
-    css = """
-<style>
-  body { margin-left: 300px !important; }
-  #side-panel {
-    position: fixed; left: 0; top: 0; width: 300px; height: 100vh;
-    overflow-y: auto; background: #1e1e2e; color: #cdd6f4;
-    padding: 16px; box-sizing: border-box; z-index: 1000;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px;
-  }
-  #side-panel h2 { margin: 0 0 14px; font-size: 15px; color: #cba6f7; letter-spacing: .3px; }
-  #side-panel h3 { margin: 16px 0 6px; font-size: 11px; color: #89b4fa; text-transform: uppercase; letter-spacing: .8px; }
-  .stat-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #313244; }
-  .stat-label { color: #a6adc8; }
-  .stat-value { font-weight: 600; }
-  #legend {
-    position: fixed; bottom: 24px; right: 12px; z-index: 1000;
-    background: white; padding: 10px 14px; border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px;
-  }
-  #legend .leg-title { font-weight: 600; margin-bottom: 7px; color: #333; }
-  .leg-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; color: #444; }
-  .leg-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
-  .leaflet-tooltip tr:first-child th { display: none; }
-  .leaflet-tooltip tr:first-child td { font-size: 14px; font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid #e0e0e0; }
-  .leaflet-tooltip tr:not(:first-child) th { color: #888; font-weight: normal; padding-right: 8px; }
-</style>
-"""
+    with open(TEMPLATE_FILE) as f:
+        panel = f.read()
 
-    panel = f"""
-<div id="side-panel">
-  <h2>Park Run</h2>
+    panel = (
+        panel
+        .replace("__TOTAL_SCORE__", str(round(total_score, 1)))
+        .replace("__INTERSECTED_COUNT__", str(intersected_count))
+        .replace("__TOTAL_KM__", str(stats["total_km"]))
+        .replace("__TIME__", stats["time"])
+        .replace("__PACE__", stats["pace"])
+        .replace("__ELE_GAIN__", str(stats["ele_gain"]))
+        .replace("__ELE_MIN__", str(stats["ele_min"]))
+        .replace("__ELE_MAX__", str(stats["ele_max"]))
+        .replace("__DIST_DATA__", json.dumps(stats["chart_dist"]))
+        .replace("__ELE_DATA__", json.dumps(stats["chart_ele"]))
+        .replace("__PACE_DATA__", json.dumps(stats["chart_pace"]))
+    )
 
-  <h3>Score</h3>
-  <div class="stat-row"><span class="stat-label">Total Points</span><span class="stat-value" style="color:#f9e2af">{round(total_score, 1)}</span></div>
-  <div class="stat-row"><span class="stat-label">Parcels Hit</span><span class="stat-value">{intersected_count}</span></div>
-
-  <h3>Summary</h3>
-  <div class="stat-row"><span class="stat-label">Distance</span><span class="stat-value">{stats['total_km']} km</span></div>
-  <div class="stat-row"><span class="stat-label">Time</span><span class="stat-value">{stats['time']}</span></div>
-  <div class="stat-row"><span class="stat-label">Avg Pace</span><span class="stat-value">{stats['pace']}</span></div>
-  <div class="stat-row"><span class="stat-label">Elevation Gain</span><span class="stat-value">{stats['ele_gain']} m</span></div>
-  <div class="stat-row"><span class="stat-label">Min Elevation</span><span class="stat-value">{stats['ele_min']} m</span></div>
-  <div class="stat-row"><span class="stat-label">Max Elevation</span><span class="stat-value">{stats['ele_max']} m</span></div>
-
-  <h3>Elevation</h3>
-  <canvas id="ele-chart"></canvas>
-
-  <h3>Pace</h3>
-  <canvas id="pace-chart"></canvas>
-</div>
-
-<div id="legend">
-  <div class="leg-title">Land Access</div>
-  <div class="leg-row">
-    <span class="leg-swatch" style="background:#2ecc71;border:2px solid #27ae60"></span>
-    Intersected (scored)
-  </div>
-  <div class="leg-row">
-    <span class="leg-swatch" style="background:#95a5a6;border:2px solid #7f8c8d"></span>
-    Not intersected
-  </div>
-  <div style="margin-top:8px;font-size:11px;color:#888">Points: 20–100 (smaller = more)</div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script>
-(function() {{
-  const dist = {json.dumps(stats['chart_dist'])};
-  const ele  = {json.dumps(stats['chart_ele'])};
-  const pace = {json.dumps(stats['chart_pace'])};
-
-  const gridColor = '#313244';
-  const tickColor = '#a6adc8';
-
-  function baseOpts(xLabel, yLabel, reverseY) {{
-    return {{
-      responsive: true,
-      animation: false,
-      plugins: {{ legend: {{ display: false }} }},
-      elements: {{ point: {{ radius: 0 }} }},
-      scales: {{
-        x: {{
-          ticks: {{ color: tickColor, maxTicksLimit: 5 }},
-          grid: {{ color: gridColor }},
-          title: {{ display: true, text: xLabel, color: tickColor }},
-        }},
-        y: {{
-          reverse: !!reverseY,
-          ticks: {{ color: tickColor }},
-          grid: {{ color: gridColor }},
-          title: {{ display: true, text: yLabel, color: tickColor }},
-        }},
-      }},
-    }};
-  }}
-
-  new Chart(document.getElementById('ele-chart'), {{
-    type: 'line',
-    data: {{
-      labels: dist,
-      datasets: [{{
-        data: ele,
-        borderColor: '#89b4fa',
-        backgroundColor: 'rgba(137,180,250,0.15)',
-        fill: true, tension: 0.3, borderWidth: 1.5,
-      }}],
-    }},
-    options: baseOpts('km', 'm', false),
-  }});
-
-  new Chart(document.getElementById('pace-chart'), {{
-    type: 'line',
-    data: {{
-      labels: dist,
-      datasets: [{{
-        data: pace,
-        borderColor: '#a6e3a1',
-        backgroundColor: 'rgba(166,227,161,0.15)',
-        fill: true, tension: 0.3, borderWidth: 1.5,
-      }}],
-    }},
-    options: baseOpts('km', 'min/km', true),
-  }});
-}})();
-</script>
-"""
-
-    html = html.replace("</head>", css + "</head>", 1)
     html = re.sub(r"(<body[^>]*>)", r"\1" + panel, html, count=1)
 
     with open(html_path, "w") as f:
@@ -312,8 +195,11 @@ def main():
     stats = gpx_stats(pts)
     track = [(p["lat"], p["lon"]) for p in pts]
 
+    track_line = sg.LineString([(p["lon"], p["lat"]) for p in pts])
+    track_buffer = buffer_track(track_line, GPX_BUFFER_METERS)
+
     geojson_files = sorted(glob.glob(os.path.join(DATA_DIR, "*.geojson")))
-    intersections = build_intersections(geojson_files)
+    intersections = load_intersections()
 
     m = folium.Map(location=(
         sum(p["lat"] for p in pts) / len(pts),
@@ -336,27 +222,30 @@ def main():
             fid = str(feature.get("id", ""))
             props = feature.get("properties") or {}
             feature["properties"] = props
-            hit = bool(intersections.get(fid))
+            hit = fid in intersections
             pts_val = parcel_points(props.get("Shape__Area"))
             props["points"] = round(pts_val, 1)
+            props["distance_through_m"] = intersections[fid] if hit else ""
             if hit:
                 total_score += pts_val
                 intersected_count += 1
 
         first_props = data["features"][0].get("properties") or {}
         tooltip_fields = []
+        aliases = []
         if "common_name" in first_props:
             tooltip_fields.append("common_name")
-        tooltip_fields.append("points")
+            aliases.append("")
+        tooltip_fields += ["points", "distance_through_m"]
+        aliases += ["Points:", "Through (m):"]
 
-        has_name = "common_name" in first_props
         folium.GeoJson(
             data,
             name=name.replace("_", " "),
             style_function=make_style_fn(intersections),
             tooltip=folium.GeoJsonTooltip(
                 fields=tooltip_fields,
-                aliases=(["", "Points:"] if has_name else ["Points:"]),
+                aliases=aliases,
                 style=(
                     "font-family: sans-serif; font-size: 13px;"
                     " background: white; border-radius: 6px; padding: 8px 10px;"
@@ -365,6 +254,13 @@ def main():
             ),
         ).add_to(m)
 
+    folium.GeoJson(
+        sg.mapping(track_buffer),
+        name="Track buffer",
+        style_function=lambda _: {
+            "color": "#e74c3c", "fillColor": "#e74c3c", "fillOpacity": 0.15, "weight": 1,
+        },
+    ).add_to(m)
     folium.PolyLine(track, color="#e74c3c", weight=3, opacity=0.9, tooltip="Park run route").add_to(m)
     folium.LayerControl().add_to(m)
 

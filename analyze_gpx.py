@@ -12,7 +12,7 @@ from pyproj import Transformer
 from shapely.ops import transform
 
 from config import GPX_BUFFER_METERS, GPX_FILE, LAYERS, OUTPUT_DIR, RESULTS_FILE
-from gpxutils import load_gpx_track
+from gpxutils import buffer_track, load_gpx_track
 
 NZTM = "EPSG:2193"
 WGS84 = "EPSG:4326"
@@ -26,14 +26,6 @@ def load_geojson(layer_name: str) -> dict:
         )
     with open(path, encoding="utf-8") as f:
         return json.load(f)
-
-
-def buffer_track(track: sg.LineString, buffer_meters: float) -> sg.Polygon:
-    to_nztm = Transformer.from_crs(WGS84, NZTM, always_xy=True).transform
-    to_wgs84 = Transformer.from_crs(NZTM, WGS84, always_xy=True).transform
-    projected = transform(to_nztm, track)
-    buffered = projected.buffer(buffer_meters)
-    return transform(to_wgs84, buffered)
 
 
 def geodesic_length_m(line: sg.base.BaseGeometry, to_nztm) -> float:
