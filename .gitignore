@@ -17,11 +17,18 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Node
+node_modules/
+
 # Python
 __pycache__/
 *.py[cod]
 *.pyo
 .venv/
+
+# Run storage
+runs/
+runs.db
 
 # Generated outputs
 map.html

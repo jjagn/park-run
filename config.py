@@ -1,5 +1,9 @@
 from pathlib import Path
 
+TEMPLATE_FILE = Path(__file__).parent / "panel_template.html"
+RUNS_DIR = Path(__file__).parent / "runs"
+DB_FILE = Path(__file__).parent / "runs.db"
+
 BASE_URL = "https://services2.arcgis.com/b5ADKIcWivL5vNaV/arcgis/rest/services/Public_Access_Areas/FeatureServer"
 PAGE_SIZE = 2000
 OUTPUT_DIR = Path("data")

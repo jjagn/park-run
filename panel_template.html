@@ -2,36 +2,36 @@
   body { margin-left: 300px !important; }
   #side-panel {
     position: fixed; left: 0; top: 0; width: 300px; height: 100vh;
-    overflow-y: auto; background: #1e1e2e; color: #cdd6f4;
+    overflow-y: auto; background: #282828; color: #ebdbb2;
     padding: 16px; box-sizing: border-box; z-index: 1000;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 13px;
   }
-  #side-panel h2 { margin: 0 0 14px; font-size: 15px; color: #cba6f7; letter-spacing: .3px; }
-  #side-panel h3 { margin: 16px 0 6px; font-size: 11px; color: #89b4fa; text-transform: uppercase; letter-spacing: .8px; }
-  .stat-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #313244; }
-  .stat-label { color: #a6adc8; }
+  #side-panel h2 { margin: 0 0 14px; font-size: 15px; color: #fe8019; letter-spacing: .3px; }
+  #side-panel h3 { margin: 16px 0 6px; font-size: 11px; color: #83a598; text-transform: uppercase; letter-spacing: .8px; }
+  .stat-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #3c3836; }
+  .stat-label { color: #a89984; }
   .stat-value { font-weight: 600; }
   #legend {
     position: fixed; bottom: 24px; right: 12px; z-index: 1000;
-    background: white; padding: 10px 14px; border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    background: #3c3836; padding: 10px 14px; border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 13px;
   }
-  #legend .leg-title { font-weight: 600; margin-bottom: 7px; color: #333; }
-  .leg-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; color: #444; }
+  #legend .leg-title { font-weight: 600; margin-bottom: 7px; color: #ebdbb2; }
+  .leg-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; color: #d5c4a1; }
   .leg-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
   .leaflet-tooltip tr:first-child th { display: none; }
-  .leaflet-tooltip tr:first-child td { font-size: 14px; font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid #e0e0e0; }
-  .leaflet-tooltip tr:not(:first-child) th { color: #888; font-weight: normal; padding-right: 8px; }
+  .leaflet-tooltip tr:first-child td { font-size: 14px; font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid #504945; }
+  .leaflet-tooltip tr:not(:first-child) th { color: #a89984; font-weight: normal; padding-right: 8px; }
 </style>
 
 <div id="side-panel">
   <h2>Park Run</h2>
 
   <h3>Score</h3>
-  <div class="stat-row"><span class="stat-label">Total Points</span><span class="stat-value" style="color:#f9e2af">__TOTAL_SCORE__</span></div>
+  <div class="stat-row"><span class="stat-label">Total Points</span><span class="stat-value" style="color:#fabd2f">__TOTAL_SCORE__</span></div>
   <div class="stat-row"><span class="stat-label">Parcels Hit</span><span class="stat-value">__INTERSECTED_COUNT__</span></div>
 
   <h3>Summary</h3>
@@ -52,18 +52,18 @@
 <div id="legend">
   <div class="leg-title">Land Access</div>
   <div class="leg-row">
-    <span class="leg-swatch" style="background:#2ecc71;border:2px solid #27ae60"></span>
+    <span class="leg-swatch" style="background:#8ec07c;border:2px solid #689d6a"></span>
     Track passed through
   </div>
   <div class="leg-row">
-    <span class="leg-swatch" style="background:#e67e22;border:2px solid #d35400"></span>
+    <span class="leg-swatch" style="background:#fe8019;border:2px solid #d65d0e"></span>
     Buffer only
   </div>
   <div class="leg-row">
-    <span class="leg-swatch" style="background:#95a5a6;border:2px solid #7f8c8d"></span>
+    <span class="leg-swatch" style="background:#928374;border:2px solid #7c6f64"></span>
     Not intersected
   </div>
-  <div style="margin-top:8px;font-size:11px;color:#888">Points: 20–100 (smaller = more)</div>
+  <div style="margin-top:8px;font-size:11px;color:#a89984">Points: 20–100 (smaller = more)</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
@@ -73,8 +73,8 @@
   const ele  = __ELE_DATA__;
   const pace = __PACE_DATA__;
 
-  const gridColor = '#313244';
-  const tickColor = '#a6adc8';
+  const gridColor = '#3c3836';
+  const tickColor = '#a89984';
 
   function baseOpts(xLabel, yLabel, reverseY) {
     return {
@@ -104,8 +104,8 @@
       labels: dist,
       datasets: [{
         data: ele,
-        borderColor: '#89b4fa',
-        backgroundColor: 'rgba(137,180,250,0.15)',
+        borderColor: '#83a598',
+        backgroundColor: 'rgba(131,165,152,0.15)',
         fill: true, tension: 0.3, borderWidth: 1.5,
       }],
     },
@@ -118,8 +118,8 @@
       labels: dist,
       datasets: [{
         data: pace,
-        borderColor: '#a6e3a1',
-        backgroundColor: 'rgba(166,227,161,0.15)',
+        borderColor: '#b8bb26',
+        backgroundColor: 'rgba(184,187,38,0.15)',
         fill: true, tension: 0.3, borderWidth: 1.5,
       }],
     },

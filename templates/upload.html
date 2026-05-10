@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analyze Run — Park Run Analyzer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #282828;
+      color: #ebdbb2;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #1d2021;
+      border: 1px solid #3c3836;
+      border-radius: 12px;
+      padding: 40px 48px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .back {
+      display: inline-block;
+      font-size: 12px;
+      color: #7c6f64;
+      text-decoration: none;
+      margin-bottom: 24px;
+      transition: color 0.15s;
+    }
+
+    .back:hover { color: #a89984; }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #fe8019;
+      margin-bottom: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    p.subtitle {
+      font-size: 13px;
+      color: #a89984;
+      margin-bottom: 28px;
+    }
+
+    .field { margin-bottom: 20px; }
+
+    label.field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #a89984;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      background: #282828;
+      border: 1px solid #504945;
+      border-radius: 6px;
+      color: #ebdbb2;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]::placeholder { color: #7c6f64; }
+    input[type="text"]:focus { border-color: #fe8019; }
+
+    .drop-zone {
+      border: 2px dashed #504945;
+      border-radius: 8px;
+      padding: 32px 24px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+      text-align: center;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #fe8019;
+      background: rgba(254, 128, 25, 0.05);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon { font-size: 28px; margin-bottom: 8px; }
+
+    .drop-label { font-size: 14px; color: #ebdbb2; margin-bottom: 4px; }
+
+    .drop-hint { font-size: 12px; color: #7c6f64; }
+
+    .file-name {
+      font-size: 13px;
+      color: #b8bb26;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+
+    .save-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px;
+      background: #282828;
+      border: 1px solid #3c3836;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      margin-bottom: 20px;
+    }
+
+    .save-row:hover { border-color: #504945; }
+
+    .save-row input[type="checkbox"] {
+      margin-top: 2px;
+      width: 15px;
+      height: 15px;
+      accent-color: #fe8019;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .save-row-text { display: flex; flex-direction: column; gap: 3px; }
+
+    .save-row-title { font-size: 13px; font-weight: 600; color: #ebdbb2; }
+
+    .save-row-desc { font-size: 12px; color: #7c6f64; line-height: 1.4; }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background: #fe8019;
+      color: #1d2021;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    button[type="submit"]:hover { background: #fabd2f; }
+    button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .status {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #a89984;
+      min-height: 18px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="/" class="back">← All Runs</a>
+
+    <h1>Analyze a Run</h1>
+    <p class="subtitle">Upload a GPX file to see which public access areas your run crossed.</p>
+
+    <form id="upload-form" method="POST" action="/analyze" enctype="multipart/form-data">
+
+      <div class="field">
+        <label class="field-label" for="name">Run Name</label>
+        <input type="text" id="name" name="name" placeholder="e.g. Saturday Morning Park Run" required>
+      </div>
+
+      <div class="field">
+        <label class="field-label">GPX File</label>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" name="gpx" id="gpx-input" accept=".gpx" required>
+          <div class="drop-icon">📍</div>
+          <div class="drop-label">Drop your GPX file here</div>
+          <div class="drop-hint">or click to browse</div>
+          <div class="file-name" id="file-name"></div>
+        </div>
+      </div>
+
+      <label class="save-row" id="save-row">
+        <input type="checkbox" name="public" id="public-checkbox" checked>
+        <div class="save-row-text">
+          <span class="save-row-title">Save this run</span>
+          <span class="save-row-desc">Results will be stored on the server and accessible from the home page. Uncheck to view results without saving.</span>
+        </div>
+      </label>
+
+      <button type="submit" id="submit-btn" disabled>Analyze Run</button>
+    </form>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const input = document.getElementById('gpx-input');
+    const dropZone = document.getElementById('drop-zone');
+    const fileName = document.getElementById('file-name');
+    const submitBtn = document.getElementById('submit-btn');
+    const status = document.getElementById('status');
+    const form = document.getElementById('upload-form');
+
+    function onFile(file) {
+      fileName.textContent = file.name;
+      submitBtn.disabled = false;
+    }
+
+    input.addEventListener('change', () => { if (input.files.length) onFile(input.files[0]); });
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) {
+        input.files = e.dataTransfer.files;
+        onFile(input.files[0]);
+      }
+    });
+
+    form.addEventListener('submit', () => {
+      submitBtn.disabled = true;
+      status.textContent = 'Analyzing… this may take a moment if data needs to be downloaded.';
+    });
+  </script>
+</body>
+</html>

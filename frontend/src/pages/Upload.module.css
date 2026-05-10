@@ -1,0 +1,138 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  background: var(--bg-hard);
+  border: 1px solid var(--bg1);
+  border-radius: 12px;
+  padding: 40px 48px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.back {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--bg4);
+  margin-bottom: 24px;
+  transition: color 0.15s;
+}
+
+.back:hover { color: var(--fg3); }
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--orange);
+  margin-bottom: 8px;
+}
+
+.subtitle { font-size: 13px; color: var(--fg3); margin-bottom: 28px; }
+
+.field { margin-bottom: 20px; }
+
+.fieldLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--bg2);
+  border-radius: 6px;
+  color: var(--fg);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.input::placeholder { color: var(--bg4); }
+.input:focus { border-color: var(--orange); }
+
+.dropZone {
+  border: 2px dashed var(--bg2);
+  border-radius: 8px;
+  padding: 32px 24px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+  position: relative;
+}
+
+.dropZone:hover, .dragging {
+  border-color: var(--orange);
+  background: rgba(254, 128, 25, 0.05);
+}
+
+.fileInput {
+  display: none;
+}
+
+.dropIcon { font-size: 28px; margin-bottom: 8px; }
+.dropLabel { font-size: 14px; color: var(--fg); margin-bottom: 4px; }
+.dropHint { font-size: 12px; color: var(--bg4); }
+.fileName { font-size: 13px; color: var(--green); margin-top: 10px; }
+
+.saveRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg);
+  border: 1px solid var(--bg1);
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: border-color 0.15s;
+}
+
+.saveRow:hover { border-color: var(--bg2); }
+
+.saveRow input[type='checkbox'] {
+  margin-top: 2px;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--orange);
+  flex-shrink: 0;
+}
+
+.saveTitle { font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 3px; }
+
+.saveDesc { font-size: 12px; color: var(--bg4); line-height: 1.4; }
+
+.error { color: var(--red); font-size: 13px; margin-bottom: 12px; }
+
+.submit {
+  width: 100%;
+  padding: 12px;
+  background: var(--orange);
+  color: var(--bg-hard);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.submit:hover:not(:disabled) { background: var(--yellow); }
+.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Result layout — full screen split */
+.resultLayout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}

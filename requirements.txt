@@ -5,3 +5,5 @@ requests==2.33.1
 urllib3==2.7.0
 shapely>=2.0
 pyproj>=3.6
+flask>=3.0
+folium>=0.17

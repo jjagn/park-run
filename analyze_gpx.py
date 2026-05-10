@@ -18,8 +18,8 @@ NZTM = "EPSG:2193"
 WGS84 = "EPSG:4326"
 
 
-def load_geojson(layer_name: str) -> dict:
-    path = OUTPUT_DIR / f"{layer_name}.geojson"
+def load_geojson(layer_name: str, data_dir: Path) -> dict:
+    path = data_dir / f"{layer_name}.geojson"
     if not path.exists():
         raise FileNotFoundError(
             f"{path} not found — run download_public_access_areas.py first"
@@ -109,20 +109,31 @@ def export_results(visited: list[dict], stats: dict, output_path: Path, layer_na
     print(f"Results written to {output_path}")
 
 
-def main() -> None:
-    track = load_gpx_track(GPX_FILE)
-    track_buffer = buffer_track(track, GPX_BUFFER_METERS)
-    layer_names = [name for _, name in LAYERS]
+def run_analysis(
+    gpx_path,
+    data_dir: Path,
+    buffer_meters: float | None = None,
+) -> tuple[list[dict], dict]:
+    """Run full analysis pipeline in memory; returns (visited, stats)."""
+    if buffer_meters is None:
+        buffer_meters = GPX_BUFFER_METERS
+    track = load_gpx_track(gpx_path)
+    track_buffer = buffer_track(track, buffer_meters)
 
     all_visited = []
     for _, name in LAYERS:
-        geojson = load_geojson(name)
+        geojson = load_geojson(name, data_dir)
         features = find_intersecting_features(track, track_buffer, geojson, name)
         print(f"  {name}: {len(features)} reserve(s) visited")
         all_visited.extend(features)
 
-    stats = compute_stats(all_visited)
-    export_results(all_visited, stats, RESULTS_FILE, layer_names)
+    return all_visited, compute_stats(all_visited)
+
+
+def main() -> None:
+    visited, stats = run_analysis(GPX_FILE, OUTPUT_DIR)
+    layer_names = [name for _, name in LAYERS]
+    export_results(visited, stats, RESULTS_FILE, layer_names)
 
 
 if __name__ == "__main__":

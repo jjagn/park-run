@@ -9,6 +9,8 @@ import time
 import requests
 
 from config import BASE_URL, GPX_FILE, LAYERS, OUTPUT_DIR, PAGE_SIZE, TABLES
+
+_NO_GEOMETRY: dict = {}  # sentinel: no spatial filter
 from gpxutils import gpx_bounding_box
 
 
@@ -92,6 +94,23 @@ def save(data: dict | list, filename: str) -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f)
     print(f"  Saved to {path}")
+
+
+def ensure_cache() -> None:
+    """Download any missing layers to OUTPUT_DIR with no bbox filter (NZ-wide).
+
+    Safe to call on every request — exits immediately if all files exist.
+    """
+    missing = [
+        (layer_id, name) for layer_id, name in LAYERS
+        if not (OUTPUT_DIR / f"{name}.geojson").exists()
+    ]
+    if not missing:
+        return
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    for layer_id, name in missing:
+        data = download_layer(layer_id, name, _NO_GEOMETRY, is_table=False)
+        save(data, f"{name}.geojson")
 
 
 def main() -> None:

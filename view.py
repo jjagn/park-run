@@ -1,30 +1,26 @@
 import glob
 import json
 import math
-import os
 import re
 import webbrowser
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from pathlib import Path
 
 import folium
 import shapely.geometry as sg
 
-from config import GPX_BUFFER_METERS
+from config import GPX_BUFFER_METERS, GPX_FILE, OUTPUT_DIR, TEMPLATE_FILE
 from gpxutils import buffer_track
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-RESULTS_FILE = os.path.join(os.path.dirname(__file__), "results", "analysis.json")
-TEMPLATE_FILE = os.path.join(os.path.dirname(__file__), "panel_template.html")
-
 STYLE_INTERSECTED = {
-    "color": "#27ae60", "fillColor": "#2ecc71", "fillOpacity": 0.5, "weight": 2,
+    "color": "#689d6a", "fillColor": "#8ec07c", "fillOpacity": 0.5, "weight": 2,
 }
 STYLE_BUFFER_ONLY = {
-    "color": "#d35400", "fillColor": "#e67e22", "fillOpacity": 0.4, "weight": 2,
+    "color": "#d65d0e", "fillColor": "#fe8019", "fillOpacity": 0.4, "weight": 2,
 }
 STYLE_DEFAULT = {
-    "color": "#7f8c8d", "fillColor": "#95a5a6", "fillOpacity": 0.2, "weight": 1,
+    "color": "#7c6f64", "fillColor": "#928374", "fillOpacity": 0.2, "weight": 1,
 }
 
 
@@ -53,11 +49,13 @@ def parse_gpx(path):
         ele = float(ele_el.text) if ele_el is not None else None
         t = datetime.fromisoformat(time_el.text.replace("Z", "+00:00")) if time_el is not None else None
         pts.append({"lat": lat, "lon": lon, "ele": ele, "time": t})
+
+    if not pts:
+        raise ValueError(f"No track points found in {path}")
     return pts
 
 
 def gpx_stats(pts):
-    # Cumulative distance
     cum_km = [0.0]
     for i in range(1, len(pts)):
         d = haversine(pts[i-1]["lat"], pts[i-1]["lon"], pts[i]["lat"], pts[i]["lon"])
@@ -65,7 +63,6 @@ def gpx_stats(pts):
 
     total_km = cum_km[-1]
 
-    # Time
     t0, t1 = pts[0]["time"], pts[-1]["time"]
     if t0 and t1:
         total_secs = (t1 - t0).total_seconds()
@@ -75,14 +72,12 @@ def gpx_stats(pts):
     else:
         total_secs, time_str = None, "N/A"
 
-    # Pace
     if total_secs and total_km > 0:
         spm = total_secs / total_km
         pace_str = f"{int(spm // 60)}:{int(spm % 60):02d} /km"
     else:
         pace_str = "N/A"
 
-    # Elevation
     eles = [p["ele"] for p in pts if p["ele"] is not None]
     ele_gain = sum(
         max(0, pts[i]["ele"] - pts[i-1]["ele"])
@@ -90,13 +85,11 @@ def gpx_stats(pts):
         if pts[i]["ele"] is not None and pts[i-1]["ele"] is not None
     )
 
-    # Chart data — sample to ≤500 points
     step = max(1, len(pts) // 500)
     idx = range(0, len(pts), step)
     chart_dist = [round(cum_km[i], 3) for i in idx]
     chart_ele = [pts[i]["ele"] for i in idx]
 
-    # Pace chart: rolling window
     win = 30
     chart_pace = []
     for i in idx:
@@ -123,7 +116,6 @@ def gpx_stats(pts):
 
 # ── Scoring ───────────────────────────────────────────────────────────────────
 
-# Exponential falloff: 100 pts at 1 m², 20 pts at 1 km² (1e6 m²)
 _SCORE_ALPHA = math.log(100 / 20) / math.log(1e6)
 
 
@@ -133,17 +125,7 @@ def parcel_points(area_m2):
     return max(20.0, min(100.0, 100.0 * area_m2 ** -_SCORE_ALPHA))
 
 
-# ── Intersection data ─────────────────────────────────────────────────────────
-
-def load_intersections():
-    if not os.path.exists(RESULTS_FILE):
-        raise FileNotFoundError(
-            f"{RESULTS_FILE} not found — run analyze_gpx.py first"
-        )
-    with open(RESULTS_FILE) as f:
-        data = json.load(f)
-    return {str(v["id"]): v["distance_through_m"] for v in data.get("visited", [])}
-
+# ── Styling ───────────────────────────────────────────────────────────────────
 
 def make_style_fn(intersections):
     def style_fn(feature):
@@ -156,11 +138,8 @@ def make_style_fn(intersections):
 
 # ── HTML post-processing ──────────────────────────────────────────────────────
 
-def inject_panel_and_legend(html_path, stats, total_score, intersected_count):
-    with open(html_path) as f:
-        html = f.read()
-
-    with open(TEMPLATE_FILE) as f:
+def inject_panel_and_legend(html: str, stats, total_score, intersected_count, template_path) -> str:
+    with open(template_path) as f:
         panel = f.read()
 
     panel = (
@@ -178,28 +157,23 @@ def inject_panel_and_legend(html_path, stats, total_score, intersected_count):
         .replace("__PACE_DATA__", json.dumps(stats["chart_pace"]))
     )
 
-    html = re.sub(r"(<body[^>]*>)", r"\1" + panel, html, count=1)
-
-    with open(html_path, "w") as f:
-        f.write(html)
+    return re.sub(r"(<body[^>]*>)", r"\1" + panel, html, count=1)
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Map builder ───────────────────────────────────────────────────────────────
 
-def main():
-    gpx_files = glob.glob(os.path.join(DATA_DIR, "*.gpx"))
-    if not gpx_files:
-        raise FileNotFoundError(f"No .gpx file found in {DATA_DIR}")
+def build_map_html(gpx_path, data_dir, visited: list[dict], template_path=None) -> str:
+    if template_path is None:
+        template_path = TEMPLATE_FILE
 
-    pts = parse_gpx(gpx_files[0])
+    pts = parse_gpx(gpx_path)
     stats = gpx_stats(pts)
     track = [(p["lat"], p["lon"]) for p in pts]
 
     track_line = sg.LineString([(p["lon"], p["lat"]) for p in pts])
     track_buffer = buffer_track(track_line, GPX_BUFFER_METERS)
 
-    geojson_files = sorted(glob.glob(os.path.join(DATA_DIR, "*.geojson")))
-    intersections = load_intersections()
+    intersections = {str(v["id"]): v["distance_through_m"] for v in visited}
 
     m = folium.Map(location=(
         sum(p["lat"] for p in pts) / len(pts),
@@ -209,8 +183,8 @@ def main():
     total_score = 0.0
     intersected_count = 0
 
-    for geojson_path in geojson_files:
-        name = os.path.splitext(os.path.basename(geojson_path))[0]
+    for geojson_path in sorted(glob.glob(str(Path(data_dir) / "*.geojson"))):
+        name = Path(geojson_path).stem
 
         with open(geojson_path) as f:
             data = json.load(f)
@@ -258,16 +232,26 @@ def main():
         sg.mapping(track_buffer),
         name="Track buffer",
         style_function=lambda _: {
-            "color": "#e74c3c", "fillColor": "#e74c3c", "fillOpacity": 0.15, "weight": 1,
+            "color": "#fb4934", "fillColor": "#fb4934", "fillOpacity": 0.15, "weight": 1,
         },
     ).add_to(m)
-    folium.PolyLine(track, color="#e74c3c", weight=3, opacity=0.9, tooltip="Park run route").add_to(m)
+    folium.PolyLine(track, color="#fb4934", weight=3, opacity=0.9, tooltip="Park run route").add_to(m)
     folium.LayerControl().add_to(m)
 
-    out = os.path.join(os.path.dirname(__file__), "map.html")
-    m.save(out)
-    inject_panel_and_legend(out, stats, total_score, intersected_count)
+    html = m.get_root().render()
+    return inject_panel_and_legend(html, stats, total_score, intersected_count, template_path)
 
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+def main():
+    from analyze_gpx import run_analysis
+
+    visited, _ = run_analysis(GPX_FILE, OUTPUT_DIR)
+    html = build_map_html(GPX_FILE, OUTPUT_DIR, visited)
+
+    out = Path(__file__).parent / "map.html"
+    out.write_text(html)
     print(f"Saved to {out}")
     webbrowser.open(f"file://{out}")
 
