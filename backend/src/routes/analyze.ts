@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import multer from 'multer'
 import { spawn } from 'child_process'
-import { writeFileSync, mkdirSync, rmSync } from 'fs'
+import { existsSync, writeFileSync, mkdirSync, rmSync } from 'fs'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import os from 'os'
@@ -12,7 +12,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ANALYSIS_DIR = path.resolve(__dirname, '../../analysis')
 const DATA_DIR = path.resolve(__dirname, '../../../data')
 const RUNS_DIR = path.resolve(__dirname, '../../../runs')
-const PYTHON = process.env.PYTHON ?? 'python3'
+const VENV_PYTHON = path.resolve(__dirname, '../../../.venv/bin/python')
+const PYTHON = process.env.PYTHON ?? (existsSync(VENV_PYTHON) ? VENV_PYTHON : 'python3')
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } })
 export const analyzeRouter = Router()

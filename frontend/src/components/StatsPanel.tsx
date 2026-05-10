@@ -9,6 +9,7 @@ import {
   Tooltip,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
+import { Link } from 'react-router-dom'
 import type { AnalysisResult } from '../types'
 import styles from './StatsPanel.module.css'
 
@@ -35,9 +36,10 @@ function chartOpts(yLabel: string, reverse = false): object {
 interface Props {
   name: string
   result: AnalysisResult
+  backHref?: string
 }
 
-export function StatsPanel({ name, result }: Props) {
+export function StatsPanel({ name, result, backHref }: Props) {
   const { stats, total_score, intersected_count } = result
 
   const eleData = {
@@ -62,6 +64,13 @@ export function StatsPanel({ name, result }: Props) {
 
   return (
     <aside className={styles.panel}>
+      {backHref && (
+        <Link to={backHref} className={styles.menuBtn} title="All Runs">
+          <span className={styles.hamburger} />
+          <span className={styles.hamburger} />
+          <span className={styles.hamburger} />
+        </Link>
+      )}
       <h2 className={styles.title}>{name}</h2>
 
       <h3 className={styles.section}>Score</h3>

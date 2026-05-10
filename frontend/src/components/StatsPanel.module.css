@@ -11,6 +11,28 @@
   gap: 0;
 }
 
+.menuBtn {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 4px;
+  margin-bottom: 12px;
+  width: 28px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.menuBtn:hover .hamburger { background: var(--fg); }
+
+.hamburger {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--fg3);
+  border-radius: 1px;
+  transition: background 0.15s;
+}
+
 .title {
   font-size: 15px;
   font-weight: 600;

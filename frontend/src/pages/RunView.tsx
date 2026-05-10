@@ -6,6 +6,7 @@ import { StatsPanel } from '../components/StatsPanel'
 import type { AnalysisResult, Run } from '../types'
 import styles from './RunView.module.css'
 
+
 export function RunView() {
   const { id } = useParams<{ id: string }>()
   const [run, setRun] = useState<Run | null>(null)
@@ -33,9 +34,8 @@ export function RunView() {
 
   return (
     <div className={styles.layout}>
-      <StatsPanel name={run.name} result={result} />
+      <StatsPanel name={run.name} result={result} backHref="/" />
       <div className={styles.mapArea}>
-        <Link to="/" className={styles.backOverlay}>← All Runs</Link>
         <RunMap result={result} />
       </div>
     </div>

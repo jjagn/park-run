@@ -10,21 +10,6 @@
   min-width: 0;
 }
 
-.backOverlay {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 1000;
-  background: var(--bg-hard);
-  color: var(--fg3);
-  border: 1px solid var(--bg1);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.backOverlay:hover { color: var(--fg); border-color: var(--bg2); }
 
 .center {
   min-height: 100vh;
