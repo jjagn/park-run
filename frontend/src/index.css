@@ -1,0 +1,38 @@
+/* Gruvbox Dark */
+:root {
+  --bg:      #282828;
+  --bg-hard: #1d2021;
+  --bg1:     #3c3836;
+  --bg2:     #504945;
+  --bg3:     #665c54;
+  --bg4:     #7c6f64;
+  --fg:      #ebdbb2;
+  --fg1:     #d5c4a1;
+  --fg2:     #bdae93;
+  --fg3:     #a89984;
+  --red:     #fb4934;
+  --green:   #8ec07c;
+  --yellow:  #fabd2f;
+  --blue:    #83a598;
+  --purple:  #d3869b;
+  --aqua:    #8ec07c;
+  --orange:  #fe8019;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+a { color: inherit; text-decoration: none; }
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}

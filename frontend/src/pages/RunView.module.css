@@ -1,0 +1,32 @@
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.mapArea {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+
+.center {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.error { color: var(--red); }
+.muted { color: var(--fg3); }
+
+.back {
+  font-size: 13px;
+  color: var(--fg3);
+  transition: color 0.15s;
+}
+
+.back:hover { color: var(--fg); }

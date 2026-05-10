@@ -1,31 +1,51 @@
 # park-run
 
-Downloads public access area data for New Zealand from the [Public Access Areas FeatureServer](https://services2.arcgis.com/b5ADKIcWivL5vNaV/arcgis/rest/services/Public_Access_Areas/FeatureServer).
+A web app for scoring GPX running routes based on how much New Zealand public access land they cover.
+
+Upload a GPX file, get an interactive map showing which public access parcels your run passed through, a score, and stats. Previous runs are stored and browsable.
+
+Public access data is sourced from the [Public Access Areas FeatureServer](https://services2.arcgis.com/b5ADKIcWivL5vNaV/arcgis/rest/services/Public_Access_Areas/FeatureServer).
+
+## Stack
+
+- **Frontend** — React + TypeScript + Vite, React Leaflet, Chart.js
+- **Backend** — Node.js + Express + TypeScript
+- **Analysis** — Python (shapely, pyproj, gpxpy)
+- **Database** — SQLite via Node's built-in `node:sqlite`
 
 ## Setup
+
+### Python environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r backend/analysis/requirements.txt
 ```
 
-## Usage
+### Node dependencies
 
 ```bash
-python download_public_access_areas.py
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-This downloads all 6 layers as GeoJSON files and the descriptions table as JSON:
+## Running
 
-| File | Description |
-|------|-------------|
-| `Road_Parcels.geojson` | Road parcels with public access (not downloaded by default) |
-| `Easements.geojson` | Easement areas |
-| `Reserve_Land.geojson` | Reserve land |
-| `Public_Access_Conservation_Land.geojson` | Conservation land with public access |
-| `Other_Parks_and_Reserves.geojson` | Other parks and reserves |
-| `Other_Public_Access_Areas.geojson` | Other public access areas |
-| `PAA_Descriptions.json` | Descriptions table |
+Start the backend (port 3001):
 
-All geometries are in WGS84 (EPSG:4326).
+```bash
+cd backend && npm run dev
+```
+
+Start the frontend dev server (port 5173):
+
+```bash
+cd frontend && npm run dev
+```
+
+Then open `http://localhost:5173`.
+
+## How scoring works
+
+Each intersected parcel scores between 20 and 100 points using an exponential falloff — smaller parcels score more. Parcels where the track buffer overlaps but the track doesn't pass directly through score at half rate.

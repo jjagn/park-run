@@ -1,0 +1,62 @@
+.card {
+  background: var(--bg-hard);
+  border: 1px solid var(--bg1);
+  border-radius: 10px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.card:hover { border-color: var(--bg2); }
+
+.header { display: flex; flex-direction: column; gap: 4px; }
+
+.name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.date { font-size: 11px; color: var(--bg4); }
+
+.divider { height: 1px; background: var(--bg1); }
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.stat { display: flex; flex-direction: column; gap: 2px; }
+
+.val { font-size: 13px; font-weight: 600; color: var(--fg); }
+
+.lbl { font-size: 10px; color: var(--bg4); text-transform: uppercase; letter-spacing: .6px; }
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score { font-size: 13px; font-weight: 600; color: var(--yellow); flex: 1; }
+
+.parcels { font-size: 12px; color: var(--fg3); }
+
+.delete {
+  background: none;
+  border: none;
+  color: var(--bg3);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.delete:hover { color: var(--red); background: rgba(251, 73, 52, 0.1); }
