@@ -25,8 +25,7 @@ __pycache__/
 
 # Generated outputs
 map.html
-data/intersections.json
-data/PAA_Descriptions.json
+data/
 results/
 *.gpx
 *.geojson
