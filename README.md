@@ -10,42 +10,34 @@ Public access data is sourced from the [Public Access Areas FeatureServer](https
 
 - **Frontend** — React + TypeScript + Vite, React Leaflet, Chart.js
 - **Backend** — Node.js + Express + TypeScript
-- **Analysis** — Python (shapely, pyproj, gpxpy)
+- **Analysis** — TypeScript (Turf.js, fast-xml-parser)
 - **Database** — SQLite via Node's built-in `node:sqlite`
 
 ## Setup
 
-### Python environment
+Requires [pnpm](https://pnpm.io). Install dependencies from the repo root:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r backend/analysis/requirements.txt
-```
-
-### Node dependencies
-
-```bash
-cd backend && npm install
-cd ../frontend && npm install
+pnpm install
 ```
 
 ## Running
 
-Start the backend (port 3001):
+Start both servers in parallel:
 
 ```bash
-cd backend && npm run dev
+pnpm dev
 ```
 
-Start the frontend dev server (port 5173):
+Or individually:
 
 ```bash
-cd frontend && npm run dev
+cd backend && pnpm dev   # port 3001
+cd frontend && pnpm dev  # port 5173
 ```
 
 Then open `http://localhost:5173`.
 
 ## How scoring works
 
-Each intersected parcel scores between 20 and 100 points using an exponential falloff — smaller parcels score more. Parcels where the track buffer overlaps but the track doesn't pass directly through score at half rate.
+Each intersected parcel scores between 20 and 100 points using an exponential falloff — smaller parcels score more. The score thresholds and buffer radius are configurable constants at the top of `backend/src/analysis/analyze.ts`.

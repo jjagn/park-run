@@ -1,0 +1,10 @@
+{
+  "name": "park-run",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install": "pnpm install",
+    "dev": "pnpm --parallel -r dev",
+    "build": "pnpm -r build"
+  }
+}

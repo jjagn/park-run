@@ -8,16 +8,19 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@turf/turf": "^7.3.5",
     "cors": "^2.8.5",
     "express": "^4.21.0",
+    "fast-xml-parser": "^5.8.0",
     "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/geojson": "^7946.0.16",
     "@types/multer": "^1.4.12",
     "@types/node": "^25.6.2",
     "tsx": "^4.19.0",
-    "typescript": "^5.0.0"
+    "typescript": "^6.0.3"
   }
 }
